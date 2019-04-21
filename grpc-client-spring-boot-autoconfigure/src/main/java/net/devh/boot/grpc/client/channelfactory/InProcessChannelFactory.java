@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Michael Zhang <yidongnan@gmail.com>
+ * Copyright (c) 2016-2019 Michael Zhang <yidongnan@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -62,6 +62,12 @@ public class InProcessChannelFactory extends AbstractChannelFactory<InProcessCha
     protected InProcessChannelBuilder newChannelBuilder(final String name) {
         log.debug("Creating new channel: {}", name);
         return InProcessChannelBuilder.forName(name);
+    }
+
+    @Override
+    protected void configureSecurity(final InProcessChannelBuilder builder, final String name) {
+        // No need to configure security as we are in process only.
+        // There is also no need to throw exceptions if transport security is configured.
     }
 
 }

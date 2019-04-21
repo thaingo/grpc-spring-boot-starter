@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Michael Zhang <yidongnan@gmail.com>
+ * Copyright (c) 2016-2019 Michael Zhang <yidongnan@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -88,6 +88,7 @@ public abstract class AbstractGrpcServerFactory<T extends ServerBuilder<T>> impl
      */
     protected void configure(final T builder) {
         configureServices(builder);
+        configureKeepAlive(builder);
         configureSecurity(builder);
         configureLimits(builder);
         for (final GrpcServerConfigurer serverConfigurer : this.serverConfigurers) {
@@ -115,6 +116,17 @@ public abstract class AbstractGrpcServerFactory<T extends ServerBuilder<T>> impl
                     + service.getBeanClazz().getName());
             builder.addService(service.getDefinition());
             this.healthStatusManager.setStatus(serviceName, HealthCheckResponse.ServingStatus.SERVING);
+        }
+    }
+
+    /**
+     * Configures the keep alive options that should be used by the server.
+     *
+     * @param builder The server builder to configure.
+     */
+    protected void configureKeepAlive(final T builder) {
+        if (this.properties.isEnableKeepAlive()) {
+            throw new IllegalStateException("KeepAlive is enabled but this implementation does not support keepAlive!");
         }
     }
 

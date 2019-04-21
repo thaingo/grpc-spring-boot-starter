@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Michael Zhang <yidongnan@gmail.com>
+ * Copyright (c) 2016-2019 Michael Zhang <yidongnan@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -67,7 +67,8 @@ public @interface GrpcClient {
      * this client.
      *
      * <p>
-     * <b>Example:</b> <code>@GrpcClient("myClient")</code> &lt;-&gt; {@code grpc.client.myClient.port=9090}
+     * <b>Example:</b> <code>@GrpcClient("myClient")</code> &lt;-&gt;
+     * {@code grpc.client.myClient.address=static://localhost:9090}
      * </p>
      *
      * <p>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Michael Zhang <yidongnan@gmail.com>
+ * Copyright (c) 2016-2019 Michael Zhang <yidongnan@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -15,34 +15,15 @@
  * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package net.devh.boot.grpc.client.nameresolver;
+package net.devh.boot.grpc.server.config;
 
-import io.grpc.Attributes;
-import io.grpc.NameResolver;
-import net.devh.boot.grpc.client.config.GrpcChannelProperties;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 /**
- * Helper class with some constants that are used by {@link NameResolver}s or their factories.
- *
- * @author Daniel Theuke (daniel.theuke@heuboe.de)
+ * Dummy config - because Spring needs one.
  */
-public final class NameResolverConstants {
-
-    /**
-     * The name of the client, that was used to create the connection.
-     */
-    public static final Attributes.Key<String> PARAMS_CLIENT_NAME =
-            Attributes.Key.create("params-client-name");
-    /**
-     * The configuration that is associated with the client.
-     */
-    public static final Attributes.Key<GrpcChannelProperties> PARAMS_CLIENT_CONFIG =
-            Attributes.Key.create("params-client-config");
-    /**
-     * The default port used if no specific port is configured.
-     */
-    public static final int DEFAULT_PORT = 9090;
-
-    private NameResolverConstants() {}
-
+@SpringBootConfiguration
+@EnableConfigurationProperties(GrpcServerProperties.class)
+public class GrpcServerPropertiesConfig {
 }

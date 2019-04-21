@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Michael Zhang <yidongnan@gmail.com>
+ * Copyright (c) 2016-2019 Michael Zhang <yidongnan@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -24,7 +24,6 @@ import java.util.List;
 
 import javax.net.ssl.SSLException;
 
-import io.grpc.LoadBalancer;
 import io.grpc.NameResolver;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
@@ -36,51 +35,50 @@ import net.devh.boot.grpc.client.config.NegotiationType;
 import net.devh.boot.grpc.client.interceptor.GlobalClientInterceptorRegistry;
 
 /**
- * This channel factory creates and managed shaded netty based {@link GrpcChannelFactory}s. This class utilizes
- * connection pooling and thus needs to be {@link #close() closed} after usage.
+ * This channel factory creates and manages shaded netty based {@link GrpcChannelFactory}s.
+ *
+ * <p>
+ * This class utilizes connection pooling and thus needs to be {@link #close() closed} after usage.
+ * </p>
  *
  * @author Daniel Theuke (daniel.theuke@heuboe.de)
  */
+// Keep this file in sync with NettyChannelFactory
 public class ShadedNettyChannelFactory extends AbstractChannelFactory<NettyChannelBuilder> {
 
-    private final LoadBalancer.Factory loadBalancerFactory;
     private final NameResolver.Factory nameResolverFactory;
 
     /**
-     * Creates a new AbstractNettyChannelFactory with eager initialized references.
+     * Creates a new GrpcChannelFactory for shaded netty with the given options.
      *
      * @param properties The properties for the channels to create.
-     * @param loadBalancerFactory The load balancer factory to use.
      * @param nameResolverFactory The name resolver factory to use.
      * @param globalClientInterceptorRegistry The interceptor registry to use.
      * @param channelConfigurers The channel configurers to use. Can be empty.
      */
     public ShadedNettyChannelFactory(final GrpcChannelsProperties properties,
-            final LoadBalancer.Factory loadBalancerFactory,
             final NameResolver.Factory nameResolverFactory,
             final GlobalClientInterceptorRegistry globalClientInterceptorRegistry,
             final List<GrpcChannelConfigurer> channelConfigurers) {
         super(properties, globalClientInterceptorRegistry, channelConfigurers);
-        this.loadBalancerFactory = requireNonNull(loadBalancerFactory, "loadBalancerFactory");
         this.nameResolverFactory = requireNonNull(nameResolverFactory, "nameResolverFactory");
     }
 
     @Override
     protected NettyChannelBuilder newChannelBuilder(final String name) {
         return NettyChannelBuilder.forTarget(name)
-                .loadBalancerFactory(this.loadBalancerFactory)
+                .defaultLoadBalancingPolicy(getPropertiesFor(name).getDefaultLoadBalancingPolicy())
                 .nameResolverFactory(this.nameResolverFactory);
     }
 
     @Override
-    // Keep this in sync with NettyChannelFactory#configureSecurity
     protected void configureSecurity(final NettyChannelBuilder builder, final String name) {
         final GrpcChannelProperties properties = getPropertiesFor(name);
 
         final NegotiationType negotiationType = properties.getNegotiationType();
         builder.negotiationType(of(negotiationType));
 
-        if (negotiationType != NegotiationType.PLAINTEXT) {
+        if (negotiationType == NegotiationType.TLS) {
             final Security security = properties.getSecurity();
 
             final String authorityOverwrite = security.getAuthorityOverride();

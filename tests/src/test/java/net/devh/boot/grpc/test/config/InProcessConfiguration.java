@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Michael Zhang <yidongnan@gmail.com>
+ * Copyright (c) 2016-2019 Michael Zhang <yidongnan@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -20,6 +20,7 @@ package net.devh.boot.grpc.test.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import io.grpc.inprocess.InProcessChannelBuilder;
 import net.devh.boot.grpc.client.channelfactory.GrpcChannelFactory;
 import net.devh.boot.grpc.client.channelfactory.InProcessChannelFactory;
 import net.devh.boot.grpc.client.config.GrpcChannelsProperties;
@@ -36,7 +37,14 @@ public class InProcessConfiguration {
     @Bean
     GrpcChannelFactory grpcChannelFactory(final GrpcChannelsProperties properties,
             final GlobalClientInterceptorRegistry globalClientInterceptorRegistry) {
-        return new InProcessChannelFactory(properties, globalClientInterceptorRegistry);
+        return new InProcessChannelFactory(properties, globalClientInterceptorRegistry) {
+
+            @Override
+            protected InProcessChannelBuilder newChannelBuilder(final String name) {
+                return super.newChannelBuilder("test"); // Use fixed inMemory channel name: test
+            }
+
+        };
     }
 
     @Bean

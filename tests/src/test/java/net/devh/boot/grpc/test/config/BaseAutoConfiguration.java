@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Michael Zhang <yidongnan@gmail.com>
+ * Copyright (c) 2016-2019 Michael Zhang <yidongnan@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -23,10 +23,11 @@ import org.springframework.context.annotation.Configuration;
 import net.devh.boot.grpc.client.autoconfigure.GrpcClientAutoConfiguration;
 import net.devh.boot.grpc.common.autoconfigure.GrpcCommonCodecAutoConfiguration;
 import net.devh.boot.grpc.server.autoconfigure.GrpcServerAutoConfiguration;
+import net.devh.boot.grpc.server.autoconfigure.GrpcServerSecurityAutoConfiguration;
 
 @Configuration
 @ImportAutoConfiguration({GrpcCommonCodecAutoConfiguration.class, GrpcServerAutoConfiguration.class,
-        GrpcClientAutoConfiguration.class})
+        GrpcServerSecurityAutoConfiguration.class, GrpcClientAutoConfiguration.class})
 public class BaseAutoConfiguration {
 
 }

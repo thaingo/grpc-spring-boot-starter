@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Michael Zhang <yidongnan@gmail.com>
+ * Copyright (c) 2016-2019 Michael Zhang <yidongnan@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -143,8 +143,8 @@ public abstract class AbstractChannelFactory<T extends ManagedChannelBuilder<T>>
     }
 
     /**
-     * Configures the given netty channel builder. This method can be overwritten to add features that are not yet
-     * supported by this library.
+     * Configures the given channel builder. This method can be overwritten to add features that are not yet supported
+     * by this library.
      *
      * @param builder The channel builder to configure.
      * @param name The name of the client to configure.
@@ -168,9 +168,9 @@ public abstract class AbstractChannelFactory<T extends ManagedChannelBuilder<T>>
     protected void configureKeepAlive(final T builder, final String name) {
         final GrpcChannelProperties properties = getPropertiesFor(name);
         if (properties.isEnableKeepAlive()) {
-            builder.keepAliveWithoutCalls(properties.isKeepAliveWithoutCalls())
-                    .keepAliveTime(properties.getKeepAliveTime(), TimeUnit.SECONDS)
-                    .keepAliveTimeout(properties.getKeepAliveTimeout(), TimeUnit.SECONDS);
+            builder.keepAliveTime(properties.getKeepAliveTime().toNanos(), TimeUnit.NANOSECONDS)
+                    .keepAliveTimeout(properties.getKeepAliveTimeout().toNanos(), TimeUnit.NANOSECONDS)
+                    .keepAliveWithoutCalls(properties.isKeepAliveWithoutCalls());
         }
     }
 

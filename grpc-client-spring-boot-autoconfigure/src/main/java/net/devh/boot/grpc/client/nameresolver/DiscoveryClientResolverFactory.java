@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Michael Zhang <yidongnan@gmail.com>
+ * Copyright (c) 2016-2019 Michael Zhang <yidongnan@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -17,6 +17,8 @@
 
 package net.devh.boot.grpc.client.nameresolver;
 
+import static java.util.Objects.requireNonNull;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,8 +32,8 @@ import org.springframework.cloud.client.discovery.event.HeartbeatEvent;
 import org.springframework.cloud.client.discovery.event.HeartbeatMonitor;
 import org.springframework.context.event.EventListener;
 
-import io.grpc.Attributes;
 import io.grpc.NameResolver;
+import io.grpc.NameResolver.Helper;
 import io.grpc.internal.GrpcUtil;
 
 /**
@@ -57,13 +59,18 @@ public class DiscoveryClientResolverFactory extends NameResolver.Factory {
 
     private final DiscoveryClient client;
 
+    /**
+     * Creates a new discovery client based name resolver factory.
+     *
+     * @param client The client to use for the address discovery.
+     */
     public DiscoveryClientResolverFactory(final DiscoveryClient client) {
-        this.client = client;
+        this.client = requireNonNull(client, "client");
     }
 
     @Nullable
     @Override
-    public NameResolver newNameResolver(final URI targetUri, final Attributes params) {
+    public NameResolver newNameResolver(final URI targetUri, final Helper helper) {
         if (DISCOVERY_SCHEME.equals(targetUri.getScheme())) {
             final String serviceName = targetUri.getPath();
             if (serviceName == null || serviceName.length() <= 1 || !serviceName.startsWith("/")) {

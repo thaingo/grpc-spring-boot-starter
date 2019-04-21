@@ -19,7 +19,7 @@ application
 
 * Supports [Spring Cloud](https://spring.io/projects/spring-cloud) (register services to [Consul](https://github.com/spring-cloud/spring-cloud-consul) or [Eureka](https://github.com/spring-cloud/spring-cloud-netflix) and fetch gRPC server information)
 
-* Supports [Spring Sleuth](https://github.com/spring-cloud/spring-cloud-sleuth) to trace application
+* Supports [Spring Sleuth](https://github.com/spring-cloud/spring-cloud-sleuth) as distributed tracing solution (If [brave-instrumentation-grpc](https://mvnrepository.com/artifact/io.zipkin.brave/brave-instrumentation-grpc) is present)
 
 * Supports global and custom gRPC server/client interceptors
 
@@ -27,13 +27,13 @@ application
 
 * Automatic metric support ([micrometer](https://micrometer.io/)/[actuator](https://github.com/spring-projects/spring-boot/tree/master/spring-boot-project/spring-boot-actuator) based)
 
-* Also works with grpc-netty-shaded
+* Also works with (non-shaded) grpc-netty
 
 ## Versions
 
-2.x.x.RELEASE support Spring Boot 2 & Spring Cloud Finchley.
+2.x.x.RELEASE support Spring Boot 2 & Spring Cloud Finchley, Greenwich.
 
-The latest version: ``2.2.1.RELEASE``
+The latest version: ``2.3.0.RELEASE``
 
 1.x.x.RELEASE support Spring Boot 1 & Spring Cloud Edgware, Dalston, Camden.
 
@@ -51,7 +51,7 @@ To add a dependency using Maven, use the following:
 <dependency>
   <groupId>net.devh</groupId>
   <artifactId>grpc-spring-boot-starter</artifactId>
-  <version>2.2.1.RELEASE</version>
+  <version>2.3.0.RELEASE</version>
 </dependency>
 ````
 
@@ -59,7 +59,7 @@ To add a dependency using Gradle:
 
 ````gradle
 dependencies {
-  compile 'net.devh:grpc-spring-boot-starter:2.2.1.RELEASE'
+  compile 'net.devh:grpc-spring-boot-starter:2.3.0.RELEASE'
 }
 ````
 
@@ -71,7 +71,7 @@ To add a dependency using Maven, use the following:
 <dependency>
   <groupId>net.devh</groupId>
   <artifactId>grpc-server-spring-boot-starter</artifactId>
-  <version>2.2.1.RELEASE</version>
+  <version>2.3.0.RELEASE</version>
 </dependency>
 ````
 
@@ -79,7 +79,7 @@ To add a dependency using Gradle:
 
 ````gradle
 dependencies {
-  compile 'net.devh:grpc-server-spring-boot-starter:2.2.1.RELEASE'
+  compile 'net.devh:grpc-server-spring-boot-starter:2.3.0.RELEASE'
 }
 ````
 
@@ -108,6 +108,24 @@ can be changed via Spring's property mechanism. The server uses the `grpc.server
 ````properties
 grpc.server.port=9090
 grpc.server.address=0.0.0.0
+````
+
+#### Customizing a Server
+
+This library also supports custom changes to the `ServerBuilder` during creation by creating `GrpcServerConfigurer` beans.
+
+````java
+@Bean
+public GrpcServerConfigurer keepAliveServerConfigurer() {
+  return serverBuilder -> {
+    if (serverBuilder instanceof NettyServerBuilder) {
+      ((NettyServerBuilder) serverBuilder)
+          .keepAliveTime(30, TimeUnit.SECONDS)
+          .keepAliveTimeout(5, TimeUnit.SECONDS)
+          .permitKeepAliveWithoutCalls(true);
+    }
+  };
+}
 ````
 
 #### Server-Security
@@ -231,7 +249,7 @@ To add a dependency using Maven, use the following:
 <dependency>
   <groupId>net.devh</groupId>
   <artifactId>grpc-client-spring-boot-starter</artifactId>
-  <version>2.2.1.RELEASE</version>
+  <version>2.3.0.RELEASE</version>
 </dependency>
 ````
 
@@ -239,7 +257,7 @@ To add a dependency using Gradle:
 
 ````gradle
 dependencies {
-  compile 'net.devh:grpc-client-spring-boot-starter:2.2.1.RELEASE'
+  compile 'net.devh:grpc-client-spring-boot-starter:2.3.0.RELEASE'
 }
 ````
 
@@ -324,9 +342,36 @@ Read more about these and other natively supported `NameResolverProviders` in th
 #### Example-Properties
 
 ````properties
+grpc.client.GLOBAL.enableKeepAlive=true
+
 grpc.client.(gRPC server name).address=static://localhost:9090
 # Or
 grpc.client.myName.address=static://localhost:9090
+````
+
+`GLOBAL` is a special constant that will be used as a fallback for configuration options that are not configured per client.
+Order of precedence: Per Client > `GLOBAL` > defaults
+
+#### Customizing a Client
+
+This library also supports custom changes to the `ManagedChannelBuilder` and gRPC client stubs during creation by creating `GrpcChannelConfigurer` and `StubTransformer` beans.
+
+````java
+@Bean
+public GrpcChannelConfigurer keepAliveClientConfigurer() {
+  return (channelBuilder, name) -> {
+    if (channelBuilder instanceof NettyChannelBuilder) {
+      ((NettyChannelBuilder) channelBuilder)
+          .keepAliveTime(15, TimeUnit.SECONDS)
+          .keepAliveTimeout(5, TimeUnit.SECONDS);
+    }
+  };
+}
+
+@Bean
+public StubTransformer authenticationStubTransformer() {
+  return (clientName, stub) -> stub.withCallCredentials(grpcCredentials(clientName));
+}
 ````
 
 #### Client-Authentication
@@ -386,18 +431,19 @@ it will automatically be used for authentication. Currently the following are su
   **Note:** There might be conflicts if you configure exactly one `CallCredentials` in the application context in
   this scenario.
 
-## Running with grpc-netty-shaded
+## Running with (non-shaded) grpc-netty
 
-This library also supports `grpc-netty-shaded` which might prevent conflicts with incompatible grpc-versions or conflitcts between libraries that require different versions of netty.
+This library supports both `grpc-netty` and `grpc-netty-shaded`.
+The later one might prevent conflicts with incompatible grpc-versions or conflicts between libraries that require different versions of netty.
 
-**Note:** If the shaded netty is present on the classpath, then this library will always favor it over the normal grpc-netty one.
+**Note:** If the shaded netty is present on the classpath, then this library will always favor it over the non-shaded grpc-netty one.
 
 You can use it with Maven like this:
 
 ````xml
 <dependency>
     <groupId>io.grpc</groupId>
-    <artifactId>grpc-netty-shaded</artifactId>
+    <artifactId>grpc-netty</artifactId>
     <version>${grpcVersion}</version>
 </dependency>
 
@@ -409,11 +455,11 @@ You can use it with Maven like this:
     <exclusions>
         <exclusion>
             <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty</artifactId>
+            <artifactId>grpc-netty-shaded</artifactId>
         </exclusion>
     </exclusions>
 </dependency>
-<!-- For the server -->
+<!-- For the server (only) -->
 <dependency>
     <groupId>net.devh</groupId>
     <artifactId>grpc-server-spring-boot-starter</artifactId>
@@ -421,11 +467,11 @@ You can use it with Maven like this:
     <exclusions>
         <exclusion>
             <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty</artifactId>
+            <artifactId>grpc-netty-shaded</artifactId>
         </exclusion>
     </exclusions>
 </dependency>
-<!-- For the client -->
+<!-- For the client (only) -->
 <dependency>
     <groupId>net.devh</groupId>
     <artifactId>grpc-client-spring-boot-starter</artifactId>
@@ -433,7 +479,7 @@ You can use it with Maven like this:
     <exclusions>
         <exclusion>
             <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty</artifactId>
+            <artifactId>grpc-netty-shaded</artifactId>
         </exclusion>
     </exclusions>
 </dependency>
@@ -442,11 +488,11 @@ You can use it with Maven like this:
 and like this when using Gradle:
 
 ````groovy
-compile "io.grpc:grpc-netty-shaded:${grpcVersion}"
+compile "io.grpc:grpc-netty:${grpcVersion}"
 
-compile 'net.devh:grpc-spring-boot-starter:...' exclude group: 'io.grpc', module: 'grpc-netty' // For both
-compile 'net.devh:grpc-client-spring-boot-starter:...' exclude group: 'io.grpc', module: 'grpc-netty' // For the client
-compile 'net.devh:grpc-server-spring-boot-starter:...' exclude group: 'io.grpc', module: 'grpc-netty' // For the server
+compile 'net.devh:grpc-spring-boot-starter:...' exclude group: 'io.grpc', module: 'grpc-netty-shaded' // For both
+compile 'net.devh:grpc-client-spring-boot-starter:...' exclude group: 'io.grpc', module: 'grpc-netty-shaded' // For the client (only)
+compile 'net.devh:grpc-server-spring-boot-starter:...' exclude group: 'io.grpc', module: 'grpc-netty-shaded' // For the server (only)
 ````
 
 ## Example-Projects
@@ -458,7 +504,8 @@ Read more about our example projects [here](examples).
 Before you begin to dive into the details, make sure that the grpc and netty library versions are compatible with each other.
 This library brings all necessary dependencies for grpc and netty to work together.
 In some cases, however, you may need additional libraries such as tcnative or have other dependencies that require a different version of netty, which may cause conflicts.
-[grpc-java](https://github.com/grpc/grpc-java) has a [table](https://github.com/grpc/grpc-java/blob/master/SECURITY.md#netty) which shows compatible version combinations. As an alternative, you can replace the netty libraries with `grpc-netty-shaded`.
+To prevent such issues gRPC and us recommend using the grpc-netty-shaded dependency.
+If you are using the (non-shaded) grpc-netty, please check the [table](https://github.com/grpc/grpc-java/blob/master/SECURITY.md#netty) provided by [grpc-java](https://github.com/grpc/grpc-java), which displays compatible version combinations.
 
 ### Issues with SSL in general
 
@@ -494,8 +541,8 @@ grpc.client.(gRPC server name).negotiationType=PLAINTEXT
 
 ### Server port already in use during tests
 
-Sometimes you just want to launch your application in your test to test the interaction between your services.
-This will also start the grpc server, however it won't be shut down after each test (class). You can avoid that issue by
+Sometimes you just want to launch your application in your test classes to check the interaction between your services.
+This will also start the grpc server, however it won't be shut down after each test (class) individually. You can avoid that issue by
 adding `@DirtiesContext` to your test classes or methods.
 
 ### No name matching XXX found
@@ -511,7 +558,3 @@ property with a name that is present in the certificate.
 ## Contributing
 
 Contributions are always welcomed! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
-## Show case
-
-https://github.com/yidongnan/grpc-spring-boot-starter/tree/master/examples

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Michael Zhang <yidongnan@gmail.com>
+ * Copyright (c) 2016-2019 Michael Zhang <yidongnan@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -136,7 +136,7 @@ public final class ManualGrpcSecurityMetadataSource extends AbstractGrpcSecurity
      * @param predicate The predicate to wrap.
      * @return The newly created list with the given predicate.
      */
-    protected Collection<ConfigAttribute> wrap(final AccessPredicate predicate) {
+    private Collection<ConfigAttribute> wrap(final AccessPredicate predicate) {
         requireNonNull(predicate, "predicate");
         if (predicate == AccessPredicates.PERMIT_ALL) {
             return of(); // Empty collection => public invocation
